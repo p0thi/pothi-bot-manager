@@ -8,6 +8,7 @@ const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const autoprefixer = require('autoprefixer');
 const postcssUrl = require('postcss-url');
 const customProperties = require('postcss-custom-properties');
+const ProvidePlugin = require('webpack/lib/ProvidePlugin');
 
 const { NoEmitOnErrorsPlugin, SourceMapDevToolPlugin, DefinePlugin, NamedModulesPlugin } = require('webpack');
 const { BaseHrefWebpackPlugin, NamedLazyChunksWebpackPlugin, InsertConcatAssetsWebpackPlugin } = require('@angular/cli/plugins/webpack');
@@ -74,7 +75,12 @@ const scripts = [
 let style_paths = styles.map(style_src => path.join(process.cwd(), style_src));
 
 function getPlugins() {
-  var plugins = [];
+  var plugins = [
+    new ProvidePlugin({
+      "window.jQuery": "jquery",
+      Hammer: "hammerjs/hammer"
+    })
+  ];
 
   // Always expose NODE_ENV to webpack, you can now use `process.env.NODE_ENV`
   // inside your code for any environment checks; UglifyJS will automatically
@@ -240,6 +246,12 @@ function getPlugins() {
 module.exports = {
   "devtool": "source-map",
   "externals": {
+    // "electron": 'require(\'electron\')',
+    // "child_process": 'require(\'child_process\')',
+    // "fs": 'require(\'fs\')',
+    "keycodemap": "require('keycodemap')",
+    "request-proomise": "require('request-proomise')",
+    "electron-settings": "require('electron-settings')",
     "electron": "require('electron')",
     "buffer": "require('buffer')",
     "child_process": "require('child_process')",
@@ -544,5 +556,5 @@ module.exports = {
   },
   "devServer": {
     "historyApiFallback": true
-  }
+  },
 };

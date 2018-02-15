@@ -1,5 +1,67 @@
-<div class="container">
-  <h1 class="title">
-    {{ 'PAGES.HOME.TITLE' | translate }}
-  </h1>
+<div
+  class="main-frame"
+  materialize
+  [materializeParams]="[toastText, toastDelay, toastStyle+' right']"
+  [materializeActions]="materializeAction"
+>
+  <nav class="nav-extended navbar-fixed teal">
+    <div class="nav-wrapper">
+      <a href="#" class="brand-logo">PothiBot Manager</a>
+      <ul class="right">
+        <li><a (click)="logout()">Logout</a></li>
+      </ul>
+    </div>
+    <div class="nav-content">
+      <div
+        *ngIf="!dummyGuildData"
+        class="preloader-wrapper small active"
+      >
+        <div class="spinner-layer spinner-red-only">
+          <div class="circle-clipper left">
+            <div class="circle"></div>
+          </div><div class="gap-patch">
+          <div class="circle"></div>
+        </div><div class="circle-clipper right">
+          <div class="circle"></div>
+        </div>
+        </div>
+      </div>
+      <ul class="tabs tabs-transparent">
+        <li class="tab" *ngFor="let guild of dummyGuildData | guild:'soundBot'; let i = index">
+          <app-guild-icon
+            [guildName]="guild.name"
+            [guildIconImage]="guild.iconUrl"
+            (click)="guildIconClicked(guild)"
+          ></app-guild-icon>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="card-panel" *ngIf="!activeGuild">
+      <span class="text">Please select a Server to continue...</span>
+    </div>
+    <ul *ngIf="activeGuild" materialize class="collection with-header">
+      <li class="collection-header">
+        <h4>Sound commands of {{activeGuild.name || 'this Server'}}</h4>
+        <input #searchbar type="text" (keyup)="0">
+      </li>
+      <li *ngFor="let soundcommand of soundCommands | soundCommand:searchbar.value; let i = index" class="collection-item">
+        <app-sound-command-item
+          [command]="soundcommand"
+          [guild]="activeGuild"
+          (toastEvent)="showToast($event)"
+          (recordEvent)="recordHotkey($event)"
+        ></app-sound-command-item>
+      </li>
+      <li *ngIf="(!(soundCommands | soundCommand:searchbar.value)
+                || (soundCommands | soundCommand:searchbar.value).length ===0)
+                && searchbar.value.length > 0" class="collection-item"
+      >
+        No matches found
+      </li>
+    </ul>
+  </div>
+
 </div>

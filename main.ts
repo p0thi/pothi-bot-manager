@@ -1,7 +1,10 @@
-import { app, BrowserWindow, screen } from 'electron';
+import { app, BrowserWindow, screen, Menu, ipcMain, globalShortcut } from 'electron';
 import * as path from 'path';
+const nodeUrl = require('url');
+const store = require('electron-settings');
+const request = require('request-promise');
 
-let win, serve;
+let mainWindow, serve, authWindow;
 const args = process.argv.slice(1);
 serve = args.some(val => val === '--serve');
 import * as url from 'url';
@@ -11,21 +14,119 @@ if (serve) {
   });
 }
 
-function createWindow() {
+ipcMain.on('discord-oauth', () => {
+  auth();
+});
+ipcMain.on('check-login-status', (event) => {
+  verifyToken(authenticated => {
+    event.sender.send('login-status', authenticated);
+  })
+});
+
+ipcMain.on('register-hotkey', (event, data) => {
+  const modifiedReferenceSet = new Set([
+    'Cmd',
+    'Ctrl',
+    'CmdOrCtrl',
+    'Alt',
+    'Option',
+    'AltGr',
+    'Shift',
+    'Super'
+  ]);
+  const modifiers = new Set();
+  const keyCodes = new Set();
+  if (data.automated) {
+    const settings = store.get('hotkeys.' + data.command);
+    if (settings) {
+      console.log(settings);
+      data.names = settings.names;
+      data.keys = settings.keys;
+    } else {
+      return;
+    }
+  }
+  for (let i = 0; i < data.names.length; i++) {
+    if (modifiedReferenceSet.has(data.names[i])) {
+      modifiers.add(data.names[i]);
+    } else {
+      keyCodes.add(data.names[i]);
+    }
+  }
+  if (modifiers.size < 1) {
+    data.error = 'You must have at least one modifiers (Cmd, Alt, Shift...).<br> <strong>Maybe duplicate hotkey?</strong>';
+    event.sender.send('register-hotkey-response-' + data.command, data);
+    return;
+  }
+  if (keyCodes.size < 1) {
+    data.error = 'You must have at least one additional key (like letters, numbers...).<br> <strong>Maybe duplicate hotkey?</strong>';
+    event.sender.send('register-hotkey-response-' + data.command, data);
+    return;
+  }
+
+  const shortcutString = Array.from(modifiers).join('+') + '+' + Array.from(keyCodes).join('+');
+  if (globalShortcut.isRegistered(shortcutString) && !data.automated) {
+    data.error = 'This shortcut is already used.';
+    event.sender.send('register-hotkey-response-' + data.command, data);
+  } else {
+    data.accelerator = shortcutString;
+    globalShortcut.register(shortcutString, () => {
+      event.sender.send('shortcut-called-' + data.command, data);
+    });
+    store.set('hotkeys.' + data.command, {
+      keys: data.keys,
+      names: data.names
+    });
+    event.sender.send('register-hotkey-response-' + data.command, data);
+  }
+
+});
+
+ipcMain.on('unregister-hotkey', (event, data) => {
+  console.log(data);
+  if (!data || !data.names || !data.command) {
+    event.sender.send('unregister-hotkey-response', {error: 'Hotkey not set.'});
+    return;
+  }
+  const accelerator = data.names.join('+');
+  if (globalShortcut.isRegistered(accelerator)) {
+    globalShortcut.unregister(accelerator);
+    store.delete('hotkeys.' + data.command);
+    event.sender.send('unregister-hotkey-response-' + data.command, data);
+  } else {
+    data.error = 'Hotkey not set.';
+    event.sender.send('unregister-hotkey-response-' + data.command, data);
+  }
+});
+
+ipcMain.on('logout', (event) => {
+  store.delete('token');
+  event.sender.send('logout');
+});
+
+function createWindow(isLoggedIn: boolean = true) {
 
   const electronScreen = screen;
-  const size = electronScreen.getPrimaryDisplay().workAreaSize;
+  // const size = electronScreen.getPrimaryDisplay().workAreaSize;
+  const size = {
+    width: 1200,
+    height: 900
+  };
 
   // Create the browser window.
-  win = new BrowserWindow({
-    x: 0,
-    y: 0,
-    width: size.width,
-    height: size.height
-  });
+  if (!mainWindow) {
+    mainWindow = new BrowserWindow({
+      x: 0,
+      y: 0,
+      width: size.width,
+      height: size.height
+    });
+  }
+
+  globalShortcut.unregisterAll();
 
   // and load the index.html of the app.
-  win.loadURL(url.format({
+  mainWindow.loadURL(url.format({
     protocol: 'file:',
     pathname: path.join(__dirname, '/index.html'),
     slashes:  true
@@ -33,23 +134,17 @@ function createWindow() {
 
   // Open the DevTools.
   if (serve) {
-    win.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
   }
 
   // Emitted when the window is closed.
-  win.on('closed', () => {
-    // Dereference the window object, usually you would store window
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    win = null;
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+    app.quit();
   });
 }
 
 try {
-
-  // This method will be called when Electron has finished
-  // initialization and is ready to create browser windows.
-  // Some APIs can only be used after this event occurs.
   app.on('ready', createWindow);
 
   // Quit when all windows are closed.
@@ -64,7 +159,7 @@ try {
   app.on('activate', () => {
     // On OS X it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (win === null) {
+    if (mainWindow === null) {
       createWindow();
     }
   });
@@ -72,4 +167,116 @@ try {
 } catch (e) {
   // Catch Error
   // throw e;
+}
+
+function auth() {
+
+    const uri = 'https://discordapp.com/oauth2/authorize' +
+      '?response_type=code&client_id=185542328218288128' +
+      '&redirect_uri=http://localhost/callback&scope=email%20identify&state=baum';
+    authWindow = new BrowserWindow({
+      width: 500,
+      height: 800,
+      show: false,
+      webPreferences: {
+        nodeIntegration : false,
+        webSecurity: false,
+        // 'node-integration': false,
+        // 'web-security': false
+      }
+    });
+
+    authWindow.webContents.loadURL(uri);
+
+    authWindow.show();
+    authWindow.webContents.on('did-stop-loading', (event, oldURL, newURL, isMainFrame) => {
+    });
+
+    function onCallback(callUrl: string) {
+      authWindow.on('closed', () => {
+        authWindow = null;
+      });
+      setImmediate(() => {
+        authWindow.close();
+      });
+      const urlParts = nodeUrl.parse(callUrl, true);
+      const query = urlParts.query;
+      const code = query.code;
+      const error = query.error;
+
+      if (error !== undefined) {
+        console.log('Error occurred.', error);
+      } else if (code) {
+        const options = {
+          url: 'http://bot.glowtrap.de:3232/auth',
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: {
+            code: code,
+            clientId: '185542328218288128',
+            redirectUri: 'http://localhost/callback',
+            responseType: 'code',
+            scope: ['email', 'identify'],
+          }
+        };
+        call(options, (err, res) => {
+          if (err) {
+            if (err.error === 401) {
+              createWindow(false);
+              return;
+            }
+          }
+          console.log(res);
+          store.set('token', res.token);
+          createWindow(true);
+        });
+      }
+    }
+
+    authWindow.webContents.on('will-navigate', (event, targetUrl) => {
+      console.log('authWindow will navigate.');
+      onCallback(targetUrl);
+    });
+
+}
+
+function verifyToken(callback) {
+  call({
+    url: 'http://bot.glowtrap.de:3232/verify_token',
+    headers: {
+      Authorization: 'Basic ' + store.get('token')
+    }
+  }, (err, body) => {
+    if (err) {
+      callback(false);
+    } else if (body.status === 'ok') {
+      callback(true);
+    } else {
+      callback(false);
+    }
+  });
+}
+
+
+function call(options, callback) {
+  if (!options.headers) {
+    options.headers = {};
+  }
+  const token = store.get('token');
+  if (token) {
+    options.headers.Authorization = 'Basic ' + store.get('token');
+  }
+  options.json = true;
+
+  request(options)
+    .then(body => {
+      console.log(body);
+      callback(undefined, body);
+    })
+    .catch(err => {
+      callback(err, undefined);
+    });
 }

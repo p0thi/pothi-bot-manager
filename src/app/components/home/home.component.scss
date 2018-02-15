@@ -1,17 +1,51 @@
-.container {
+.drawer-container {
   height: 100%;
+}
+
+.main-frame {
+  box-sizing: border-box;
+  padding-top: 11em;
+  width: 100%;
+  //max-height: 100%;
+  min-height: 100%;
+  background-color: #c3cbd2;
+}
+
+.preloader-wrapper {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
+}
 
-  background: url(../../../assets/background.jpg) no-repeat center fixed;
-  -webkit-background-size: cover; /* pour anciens Chrome et Safari */
-  background-size: cover; /* version standardisée */
+.tab, .tabs {
+  margin: .5em;
+  line-height: unset;
+  height: unset;
+  display: flex;
+  justify-content: center;
+}
 
-  .title {
-    color: white;
-    margin:0;
-    padding:50px 20px;
+.main-content {
+  display: grid;
+  padding: 1em;
+  .collection {
+    //max-height: 45em;
+    overflow: auto;
   }
+}
 
+.card-panel {
+  .text {
+    color: #110700;
+  }
+}
+
+
+nav {
+  box-sizing: border-box;
+  padding: .5em 1em;
+  position: fixed;
+  height: 11em;
+  top: 0;
+  color: #c3cbd2;
 }

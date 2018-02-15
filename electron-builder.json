@@ -1,5 +1,5 @@
 {
-  "productName": "angular-electron",
+  "productName": "PothiBot Manager",
   "directories": {
     "app": "dist",
     "output": "app-builds"
@@ -7,7 +7,8 @@
   "win": {
     "icon": "dist/favicon",
     "target": [
-      "portable"
+      "portable",
+      "nsis"
     ]
   },
   "mac": {
@@ -21,5 +22,10 @@
     "target": [
       "AppImage"
     ]
-  }
+  },
+  "publish": [{
+    "provider": "github",
+    "owner": "p0thi",
+    "repo"
+  }]
 }
