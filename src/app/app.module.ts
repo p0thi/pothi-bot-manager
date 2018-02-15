@@ -31,6 +31,7 @@ import {HttpService} from './services/http.service';
 import { GuildPipe } from './pipes/guild.pipe';
 import {RecorderService} from './services/recorder.service';
 import { SoundCommandPipe } from './pipes/sound-command.pipe';
+import { RoundNumberPipe } from './pipes/round-number.pipe';
 
 
 // AoT requires an exported function for factories
@@ -49,6 +50,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     LoginComponent,
     GuildPipe,
     SoundCommandPipe,
+    RoundNumberPipe,
   ],
   imports: [
     BrowserModule,

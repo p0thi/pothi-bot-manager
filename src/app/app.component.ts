@@ -13,6 +13,14 @@ const store = electron.remote.require('electron-settings');
 export class AppComponent implements OnInit{
   authChecked = false;
   authenticated = false;
+
+
+
+  updating = false;
+  progress = {};
+
+
+
   constructor(public electronService: ElectronService,
     private translate: TranslateService,
     private httpService: HttpService) {
@@ -31,11 +39,7 @@ export class AppComponent implements OnInit{
   }
 
   ngOnInit(): void {
-    // electron.ipcRenderer.on('login-status', (event, args) => {
-    //   this.authenticated = args;
-    //   this.authChecked = true;
-    // });
-    // electron.ipcRenderer.send('check-login-status');
+
     this.httpService.verifyToken(authenticated => {
       this.authenticated = authenticated;
       this.authChecked = true;
@@ -44,6 +48,16 @@ export class AppComponent implements OnInit{
     this.electronService.ipcRenderer.on('logout', () => {
       console.log('logout');
       this.authenticated = false;
+    });
+
+    this.electronService.ipcRenderer.on('update', (event, data) => {
+      if (data && data.message) {
+        if (data.message === 'update') {
+          this.updating = true;
+        } else if (data.message === 'progress') {
+          this.progress = data.progress;
+        }
+      }
     });
   }
 }

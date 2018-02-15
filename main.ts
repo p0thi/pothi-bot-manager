@@ -3,6 +3,12 @@ import * as path from 'path';
 const nodeUrl = require('url');
 const store = require('electron-settings');
 const request = require('request-promise');
+const {autoUpdater} = require('electron-updater');
+const log = require('electron-log');
+
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
+log.info('App starting...');
 
 let mainWindow, serve, authWindow;
 const args = process.argv.slice(1);
@@ -104,7 +110,7 @@ ipcMain.on('logout', (event) => {
   event.sender.send('logout');
 });
 
-function createWindow(isLoggedIn: boolean = true) {
+function createWindow() {
 
   const electronScreen = screen;
   // const size = electronScreen.getPrimaryDisplay().workAreaSize;
@@ -145,7 +151,39 @@ function createWindow(isLoggedIn: boolean = true) {
 }
 
 try {
-  app.on('ready', createWindow);
+  app.on('ready', () => {
+    autoUpdater.checkForUpdates();
+    createWindow();
+  });
+
+  autoUpdater.on('checking-for-update', () => {
+    console.log('checking for updates');
+  });
+  autoUpdater.on('update-available', (info) => {
+    console.log('update available');
+    mainWindow.webContents.send('update', {message: 'update'});
+  });
+  autoUpdater.on('update-not-available', (info) => {
+    console.log('no update available');
+
+    // mainWindow.webContents.send('update', {message: 'update'});
+    // mainWindow.webContents.send('update', {message: 'progress', progress: {
+    //     percent: 50,
+    //     bytesPerSecond: 2000000
+    //   }});
+  });
+  autoUpdater.on('error', (err) => {
+    console.log('update error');
+    console.error(err);
+  });
+  autoUpdater.on('download-progress', (progressObj) => {
+    console.log('update progress: ' + progressObj.percent);
+    mainWindow.webContents.send('update', {message: 'progress', progress: progressObj});
+  });
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('update downloaded');
+    autoUpdater.quitAndInstall(true, true);
+  });
 
   // Quit when all windows are closed.
   app.on('window-all-closed', () => {
@@ -180,9 +218,7 @@ function auth() {
       show: false,
       webPreferences: {
         nodeIntegration : false,
-        webSecurity: false,
-        // 'node-integration': false,
-        // 'web-security': false
+        webSecurity: false
       }
     });
 
@@ -225,13 +261,13 @@ function auth() {
         call(options, (err, res) => {
           if (err) {
             if (err.error === 401) {
-              createWindow(false);
+              createWindow();
               return;
             }
           }
           console.log(res);
           store.set('token', res.token);
-          createWindow(true);
+          createWindow();
         });
       }
     }

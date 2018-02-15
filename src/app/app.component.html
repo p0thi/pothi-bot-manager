@@ -1,5 +1,5 @@
-<app-home *ngIf="authenticated"></app-home>
-<div *ngIf="!authChecked" class="loading">
+<app-home *ngIf="authenticated && !updating"></app-home>
+<div *ngIf="!authChecked && !updating" class="loading">
   <div class="preloader-wrapper big active">
     <div class="spinner-layer spinner-blue-only">
       <div class="circle-clipper left">
@@ -12,4 +12,13 @@
     </div>
   </div>
 </div>
-<app-login *ngIf="!authenticated && authChecked"></app-login>
+<app-login *ngIf="!authenticated && authChecked && !updating"></app-login>
+<div *ngIf="updating" class="updater-container">
+  <div class="card-panel teal">
+    <h4>Updating...</h4>
+    <div *ngIf="progress" class="progress teal lighten-2">
+      <div [style.width]="progress.percent + '%'" class="determinate white"></div>
+    </div>
+    <span class="speed">{{((progress !== undefined ? progress.bytesPerSecond : 1) / 1048576) | roundNumber:2}}</span><span> Mb/s</span>
+  </div>
+</div>
