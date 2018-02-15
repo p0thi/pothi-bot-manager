@@ -8,6 +8,7 @@
   "win": {
     "icon": "dist/favicon",
     "target": [
+      "portable",
       "nsis"
     ]
   },
