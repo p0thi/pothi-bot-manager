@@ -45,7 +45,11 @@
     <ul *ngIf="activeGuild" materialize class="collection with-header">
       <li class="collection-header">
         <h4>Sound commands of {{activeGuild.name || 'this Server'}}</h4>
-        <input #searchbar type="text" (keyup)="0">
+        <div class="input-field">
+          <label for="searchbar">Search</label>
+          <input id="searchbar" #searchbar type="search" (keyup)="0">
+          <i class="material-icons" (click)="searchbar.value = ''">clear</i>
+        </div>
       </li>
       <li *ngFor="let soundcommand of soundCommands | soundCommand:searchbar.value; let i = index" class="collection-item">
         <app-sound-command-item
