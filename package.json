@@ -1,6 +1,6 @@
 {
   "name": "pothibot-app",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "description": "A application to interact with PothiBot's discord bot",
   "homepage": "http://bot.glowtrap.de",
   "author": {
@@ -75,7 +75,7 @@
     "istanbul-instrumenter-loader": "3.0.0",
     "jasmine-core": "2.8.0",
     "jasmine-spec-reporter": "4.2.1",
-    "jquery": "^2.2.4",
+    "jquery": "^3.0.0",
     "json-loader": "0.5.7",
     "karma": "1.7.1",
     "karma-chrome-launcher": "2.2.0",
@@ -114,7 +114,7 @@
     "webpack-dev-server": "2.9.3",
     "zone.js": "0.8.17"
   },
-  "license": "MIT",
+  "license": "closed",
   "dependencies": {
     "electron-log": "^2.2.14",
     "electron-settings": "^3.1.4",

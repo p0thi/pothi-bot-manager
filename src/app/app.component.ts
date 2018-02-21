@@ -56,6 +56,8 @@ export class AppComponent implements OnInit{
           this.updating = true;
         } else if (data.message === 'progress') {
           this.progress = data.progress;
+        } else if (data.message === 'done') {
+          console.log('update done');
         }
       }
     });

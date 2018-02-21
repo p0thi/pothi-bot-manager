@@ -38,7 +38,7 @@ const store = electron.remote.require('electron-settings');
           (click)="deleteHotkey()"
           matTooltip="Remove Hotkey"
           matTooltipPosition="before"
-          class="btn-floating wave-effect btn-small"
+          class="btn-floating waves-effect btn-small"
         ><i class="material-icons left">delete_forever</i></a>
       </div>
     </div>

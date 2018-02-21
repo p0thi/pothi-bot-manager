@@ -182,6 +182,7 @@ try {
   });
   autoUpdater.on('update-downloaded', (info) => {
     console.log('update downloaded');
+    mainWindow.webContents.send('update', {message: 'done'});
     autoUpdater.quitAndInstall(true, true);
   });
 
