@@ -233,9 +233,13 @@ function auth() {
       authWindow.on('closed', () => {
         authWindow = null;
       });
-      setImmediate(() => {
-        authWindow.close();
-      });
+      if (callUrl.startsWith('http://localhost/callback')) {
+        setImmediate(() => {
+          authWindow.close();
+        });
+      } else {
+        return;
+      }
       const urlParts = nodeUrl.parse(callUrl, true);
       const query = urlParts.query;
       const code = query.code;
@@ -275,6 +279,7 @@ function auth() {
 
     authWindow.webContents.on('will-navigate', (event, targetUrl) => {
       console.log('authWindow will navigate.');
+      console.log('target url: ' + targetUrl);
       onCallback(targetUrl);
     });
 
